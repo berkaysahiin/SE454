@@ -1,1 +1,2 @@
-# distributed-algorithms
+# SE454 Distributed Computing
+
