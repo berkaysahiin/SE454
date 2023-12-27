@@ -54,6 +54,7 @@ class MessageType(Enum):
     ACK = 2
     DISCARD = 3
     ROVER = 4
+    TERMINATE = 5
 
 class Message:
     def __init__(self, sender, type, data):
@@ -69,7 +70,7 @@ node = Node(rank)
 
 #print(f'rank : {rank} -> {node.neighbors}')
 
-while Alg.round_number < 10:
+while node.state != NodeState.TERMINATE:
     Alg.round_over = False
     node.neighs_rcvd.clear()
     node.rovers_rcvd.clear()
@@ -79,6 +80,12 @@ while Alg.round_number < 10:
         Alg.round_number += 1
         round_msg = Message(sender=rank, type=MessageType.ROUND, data=Alg.round_number)
         comm.send(obj=round_msg, dest=0, tag=MessageType.ROUND.value)
+
+        if node.state == NodeState.COLORED: # next round is the last round
+            term_msg = Message(sender=rank, type=MessageType.TERMINATE, data=None)
+            comm.send(obj=term_msg, dest=0, tag=MessageType.TERMINATE.value)
+
+
 
         #print(f'----------------Starting round {Alg.round_number}----------------')
 
@@ -129,8 +136,20 @@ while Alg.round_number < 10:
         elif msg.type == MessageType.ACK:
             #print(f'ACK RECIEVED: rank: {node.rank}, sender: {msg.sender}')
             node.neighs_rcvd.add(msg.sender)
+        
+        elif msg.type == MessageType.TERMINATE:
+            print(f'Recieved terminate msg {node.rank}')
+            if node.childs:
+                for child in node.childs:
+                    term_msg = Message(sender=rank, type=MessageType.TERMINATE, data=None)
+                    comm.send(obj=term_msg, dest=child, tag=MessageType.TERMINATE.value)
+
+            node.state = NodeState.TERMINATE
+            break
 
         if node.round_rcvd and node.neighbors.issubset(node.neighs_rcvd) and len(node.childs) == len(node.rovers_rcvd):
             rover_msg = Message(sender=rank, type=MessageType.ROVER, data=None)
             comm.send(obj=rover_msg, dest=node.parent, tag=MessageType.ROVER.value)
             Alg.round_over = True
+
+print(f'Terminated {node.rank}')
