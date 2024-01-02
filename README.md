@@ -18,7 +18,7 @@ This project implements a distributed computing algorithm for rank-based graph c
    mpiexec -n <num_processes> python rank_based_coloring.py
 
 ## Algorithm Execution Loop
-Each round is started by the root node, and node with highest local degree color itself.
+Each round is initiated by the root node, and the node with the highest local degree colors itself
 
 ## Termination Condition
 This algorithm assumes that the root node is the lowest ranked node, thus terminates when the root node is colored.
